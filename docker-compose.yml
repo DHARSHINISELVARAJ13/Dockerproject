@@ -1,0 +1,54 @@
+
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: quickblog-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: quickblog
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - quickblog-network
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: quickblog-backend
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      MONGO_URI: mongodb://root:password@mongodb:27017/quickblog?authSource=admin
+      NODE_ENV: development
+      JWT_SECRET: your-secret-key
+    depends_on:
+      - mongodb
+    networks:
+      - quickblog-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: quickblog-frontend
+    ports:
+      - "80:80"
+    environment:
+      VITE_API_URL: http://192.168.198.129:3000
+    depends_on:
+      - backend
+    networks:
+      - quickblog-network
+
+networks:
+  quickblog-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
