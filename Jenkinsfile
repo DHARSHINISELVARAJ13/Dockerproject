@@ -3,13 +3,7 @@ pipeline {
 
     stages {
 
-        stage('Clean Workspace') {
-            steps {
-                deleteDir()
-            }
-        }
-
-        
+               
 
         stage('Build Backend Image') {
             steps {
