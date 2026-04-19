@@ -5,21 +5,24 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// Check if API key is set
-if (!process.env.OPEN_API_KEY) {
-  throw new Error(
-    "❌ OPENAI_API_KEY is not set in your .env file. Please add it and restart the server."
-  );
-}
+const openAiApiKey = process.env.OPENAI_API_KEY;
 
-// Create OpenAI client
-const client = new OpenAI({
-  apiKey: process.env.OPEN_API_KEY,
-});
+// Keep backend startup resilient: AI features are optional.
+const client = openAiApiKey
+  ? new OpenAI({
+      apiKey: openAiApiKey,
+    })
+  : null;
 
 // Main function to generate content
 async function main(prompt) {
   try {
+    if (!client) {
+      throw new Error(
+        "OPENAI_API_KEY is not configured. Add it to backend environment variables to use AI content generation."
+      );
+    }
+
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini", // choose a model you have access to
       messages: [{ role: "user", content: prompt }],

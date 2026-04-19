@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Moment from 'moment';
+import { useAppContext } from '../../context/AppContext';
 
 const BlogCard = ({ blog }) => {
   const navigate = useNavigate();
   const { _id, title, description, category, image, createdAt, author, authorName } = blog;
+  const { getImageUrl } = useAppContext();
 
   // Clean HTML from description for preview
   const cleanDescription = description?.replace(/<[^>]*>/g, '') || '';
@@ -16,7 +18,7 @@ const BlogCard = ({ blog }) => {
     >
       <div className="relative overflow-hidden">
         <img 
-          src={image || '/placeholder-image.jpg'} 
+          src={getImageUrl(image) || '/placeholder-image.jpg'} 
           alt={title} 
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" 
         />

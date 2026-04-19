@@ -3,7 +3,8 @@ import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || "http://localhost:3000";
+const apiOrigin = axios.defaults.baseURL.replace(/\/$/, '');
 
 const AppContext = createContext();
 
@@ -20,7 +21,9 @@ export const AppProvider = ({ children }) => {
     const login = async (email, password, isAdmin = false) => {
         try {
             const endpoint = isAdmin ? 'api/admin/login' : 'api/user/login';
-            const { data } = await axios.post(endpoint, { email, password });
+            const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+            const normalizedPassword = typeof password === 'string' ? password.trim() : password;
+            const { data } = await axios.post(endpoint, { email: normalizedEmail, password: normalizedPassword });
             
             if (data.success) {
                 setToken(data.token);
@@ -51,7 +54,11 @@ export const AppProvider = ({ children }) => {
 
     const register = async (name, email, password) => {
         try {
-            const { data } = await axios.post('api/user/register', { name, email, password });
+            const { data } = await axios.post('api/user/register', {
+                name: typeof name === 'string' ? name.trim() : name,
+                email: typeof email === 'string' ? email.trim().toLowerCase() : email,
+                password: typeof password === 'string' ? password.trim() : password,
+            });
             
             if (data.success) {
                 setToken(data.token);
@@ -101,6 +108,18 @@ export const AppProvider = ({ children }) => {
         }
     };
 
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) {
+            return '';
+        }
+
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+            return imagePath;
+        }
+
+        return `${apiOrigin}${imagePath.startsWith('/') ? imagePath : `/${imagePath}`}`;
+    };
+
     // Check authentication on app load
     useEffect(() => {
         const initAuth = async () => {
@@ -138,7 +157,8 @@ export const AppProvider = ({ children }) => {
         login,
         register,
         logout,
-        fetchBlogs
+        fetchBlogs,
+        getImageUrl
     };
 
     return (

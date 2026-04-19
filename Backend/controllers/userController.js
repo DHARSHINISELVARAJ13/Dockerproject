@@ -5,7 +5,16 @@ import jwt from "jsonwebtoken";
 // Register User
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+        const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+        const password = typeof req.body.password === 'string' ? req.body.password.trim() : '';
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Name, email, and password are required"
+            });
+        }
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
@@ -56,7 +65,15 @@ export const registerUser = async (req, res) => {
 // Login User
 export const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+        const password = typeof req.body.password === 'string' ? req.body.password.trim() : '';
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required"
+            });
+        }
 
         // Find user by email
         const user = await User.findOne({ email });

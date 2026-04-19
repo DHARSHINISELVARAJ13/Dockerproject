@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 
 const Blog = () => {
   const { id } = useParams()
-  const { axios, user, token, navigate } = useAppContext()
+  const { axios, user, token, navigate, getImageUrl } = useAppContext()
 
   const [data, setData] = useState(null)
   const [comments, setComments] = useState([])
@@ -158,7 +158,7 @@ const Blog = () => {
 
       {/* Blog Image + Content */}
       <div className='mx-5 max-w-5xl md:mx-auto my-10 mt-6'>
-        <img src={data.image} alt="" className='rounded-3xl mb-5' />
+        <img src={getImageUrl(data.image)} alt="" className='rounded-3xl mb-5' />
         <div
           className='rich-text max-w-3xl mx-auto'
           dangerouslySetInnerHTML={{ __html: data.description }}

@@ -26,7 +26,7 @@ const Login = () => {
         }
 
         setLoading(true);
-        await login(formData.email, formData.password, formData.isAdmin);
+        await login(formData.email.trim(), formData.password.trim(), formData.isAdmin);
         setLoading(false);
     };
 
