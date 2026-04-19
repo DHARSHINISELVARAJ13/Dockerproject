@@ -31,7 +31,7 @@ const Header = () => {
 
         <p className="my-6 sm:my-8 max-w-2xl m-auto max-sm:text-xs text-gray-500">
           This is your space to think out loud, to share what matters, and to write without filters. 
-          Whether it's one word or a thousand, your story starts right here.Dharss
+          Whether it's one word or a thousand, your story starts right here.Dharss1309
         </p>
 
         <form
