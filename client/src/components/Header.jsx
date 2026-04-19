@@ -26,7 +26,7 @@ const Header = () => {
         <h1 className="text-3xl sm:text-6xl font-semibold sm:leading-16 text-gray-700">
           Your own <span className="text-primary">Blogging </span>
           <br />
-          Platform.
+          platform.
         </h1>
 
         <p className="my-6 sm:my-8 max-w-2xl m-auto max-sm:text-xs text-gray-500">
