@@ -3,8 +3,6 @@ pipeline {
 
     stages {
 
-               
-
         stage('Build Backend Image') {
             steps {
                 sh 'docker build -t quickblog-backend ./Backend'
@@ -17,26 +15,16 @@ pipeline {
             }
         }
 
-        stage('Deploy MongoDB') {
-            steps {
-                sh '''
-                docker rm -f quickblog-mongodb || true
-                docker run -d --name quickblog-mongodb \
-                -p 27017:27017 \
-                -e MONGO_INITDB_ROOT_USERNAME=root \
-                -e MONGO_INITDB_ROOT_PASSWORD=password \
-                mongo:latest
-                '''
-            }
-        }
-
         stage('Deploy Backend') {
             steps {
                 sh '''
                 docker rm -f quickblog-backend || true
                 docker run -d --name quickblog-backend \
                 -p 3000:3000 \
-                --link quickblog-mongodb:mongodb \
+                -e PORT=3000 \
+                -e MONGO_URI="mongodb+srv://dharshinisugandhi:dhars1309@cluster0.0e69m2i.mongodb.net/?appName=Cluster0" \
+                -e NODE_ENV=development \
+                -e JWT_SECRET=your-secret-key \
                 quickblog-backend
                 '''
             }
