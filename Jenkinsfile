@@ -9,12 +9,7 @@ pipeline {
             }
         }
 
-        stage('Clone Source') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/DHARSHINISELVARAJ13/Dockerproject.git'
-            }
-        }
+        
 
         stage('Build Backend Image') {
             steps {
