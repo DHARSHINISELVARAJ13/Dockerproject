@@ -3,9 +3,16 @@ pipeline {
 
     stages {
 
-        stage('Clone') {
+        stage('Clean Workspace') {
             steps {
-                echo 'Code Loaded'
+                deleteDir()
+            }
+        }
+
+        stage('Clone Source') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/DHARSHINISELVARAJ13/Dockerproject.git'
             }
         }
 
@@ -51,7 +58,7 @@ pipeline {
                 sh '''
                 docker rm -f quickblog-frontend || true
                 docker run -d --name quickblog-frontend \
-                -p 80:80 \
+                -p 8081:80 \
                 --link quickblog-backend:backend \
                 quickblog-frontend
                 '''
