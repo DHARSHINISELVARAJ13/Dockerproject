@@ -24,7 +24,7 @@ const Header = () => {
         </div>
 
         <h1 className="text-3xl sm:text-6xl font-semibold sm:leading-16 text-gray-700">
-          Your own <span className="text-primary">blogging </span>
+          Your own <span className="text-primary">Blogging </span>
           <br />
           platform.
         </h1>
