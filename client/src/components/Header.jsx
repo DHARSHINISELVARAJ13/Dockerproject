@@ -19,7 +19,7 @@ const Header = () => {
       <div className="text-center mt-20 mb-8">
         <div className="inline-flex items-center justify-center gap-4 px-6 py-1.5 mb-4 border border-primary/40 
                         bg-primary/10 rounded-full text-sm text-primary">
-          <p>New: AI feature integrated..</p>
+          <p>New: AI feature integrated</p>
           <img src={assets.star_icon} className="w-2.5" alt="star icon" />
         </div>
 
