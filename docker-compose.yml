@@ -1,48 +1,79 @@
 
 
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: quickblog-mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: quickblog
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - quickblog-network
-
   backend:
     build:
       context: ./Backend
       dockerfile: Dockerfile
     container_name: quickblog-backend
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       PORT: 3000
-      MONGO_URI: mongodb://root:password@mongodb:27017/quickblog?authSource=admin
-      NODE_ENV: development
-      JWT_SECRET: your-secret-key
-    depends_on:
-      - mongodb
+      # Keep the production MongoDB target external so this observability stack only owns the app, not the database.
+      MONGO_URI: ${MONGO_URI:?Set MONGO_URI before starting the stack}
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before starting the stack}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      IMAGEKIT_PUBLIC_KEY: ${IMAGEKIT_PUBLIC_KEY:-}
+      IMAGEKIT_PRIVATE_KEY: ${IMAGEKIT_PRIVATE_KEY:-}
+      IMAGEKIT_URL_ENDPOINT: ${IMAGEKIT_URL_ENDPOINT:-}
+    volumes:
+      - backend_uploads:/app/uploads
     networks:
       - quickblog-network
 
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    container_name: quickblog-frontend
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: quickblog-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
     ports:
-      - "80:80"
-    environment:
-      VITE_API_URL: /api
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
     depends_on:
       - backend
+      - alertmanager
+    networks:
+      - quickblog-network
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: quickblog-alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --config.expand-env
+    environment:
+      ALERTMANAGER_CRITICAL_SLACK_WEBHOOK: ${ALERTMANAGER_CRITICAL_SLACK_WEBHOOK:?Set ALERTMANAGER_CRITICAL_SLACK_WEBHOOK before starting the stack}
+      ALERTMANAGER_OPS_SLACK_WEBHOOK: ${ALERTMANAGER_OPS_SLACK_WEBHOOK:?Set ALERTMANAGER_OPS_SLACK_WEBHOOK before starting the stack}
+    expose:
+      - "9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - quickblog-network
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: quickblog-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER before starting the stack}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD before starting the stack}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
     networks:
       - quickblog-network
 
@@ -51,4 +82,7 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
+  backend_uploads:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:

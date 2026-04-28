@@ -1,0 +1,77 @@
+{
+  "uid": "quickblog-user-activity",
+  "title": "QuickBlog User Activity",
+  "description": "Tracks registration volume, login success rates, and failure spikes that could indicate abuse.",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "tags": ["quickblog", "users", "auth"],
+  "time": { "from": "now-6h", "to": "now" },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Auth Volume",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Registrations vs Logins",
+      "description": "Signup and login volume across the platform.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "rate(quickblog_user_registration_attempts_total[5m])",
+          "legendFormat": "registrations",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(quickblog_user_login_attempts_total[5m])",
+          "legendFormat": "logins",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Login Failure Rate",
+      "description": "Credential stuffing signal for public auth endpoints.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(quickblog_user_login_attempts_total{outcome=\"failure\"}[5m])) / sum(rate(quickblog_user_login_attempts_total[5m]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Admin vs User Login Mix",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Login Attempts by Role",
+      "description": "Separates admin and user auth pressure so abusive admin attempts are visible too.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(rate(quickblog_user_login_attempts_total[5m])) by (user_role, outcome)",
+          "legendFormat": "{{user_role}} / {{outcome}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

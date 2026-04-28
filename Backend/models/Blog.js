@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { mongooseMetricsPlugin } from "../configs/metrics.js";
 
 const blogSchema = new mongoose.Schema({
     title: {type: String, required: true},
@@ -20,5 +21,8 @@ const blogSchema = new mongoose.Schema({
     },
     rejectionReason: {type: String}
 }, {timestamps: true});
+
+// Track blog query latency centrally so moderation and listing dashboards stay accurate.
+blogSchema.plugin(mongooseMetricsPlugin);
 const Blog = mongoose.model('blog',blogSchema);
 export default Blog;

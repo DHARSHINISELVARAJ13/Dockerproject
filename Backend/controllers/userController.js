@@ -1,6 +1,13 @@
 import User from "../models/User.js";
 import Blog from "../models/Blog.js";
 import jwt from "jsonwebtoken";
+import {
+    incrementModerationQueueDepth,
+    recordBlogSubmission,
+    recordImageUpload,
+    recordLoginAttempt,
+    recordUserRegistration,
+} from "../configs/metrics.js";
 
 // Register User
 export const registerUser = async (req, res) => {
@@ -10,6 +17,7 @@ export const registerUser = async (req, res) => {
         const password = typeof req.body.password === 'string' ? req.body.password.trim() : '';
 
         if (!name || !email || !password) {
+            recordUserRegistration(req, 'failure', 400);
             return res.status(400).json({
                 success: false,
                 message: "Name, email, and password are required"
@@ -19,6 +27,7 @@ export const registerUser = async (req, res) => {
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
+            recordUserRegistration(req, 'failure', 400);
             return res.status(400).json({
                 success: false,
                 message: "User already exists with this email"
@@ -34,6 +43,9 @@ export const registerUser = async (req, res) => {
         });
 
         await user.save();
+
+        // Record the successful registration after persistence so Grafana reflects real sign-ups.
+        recordUserRegistration(req, 'success', 201);
 
         // Generate JWT token
         const token = jwt.sign(
@@ -55,6 +67,7 @@ export const registerUser = async (req, res) => {
         });
     } catch (error) {
         console.error("Registration error:", error);
+        recordUserRegistration(req, 'failure', 500);
         res.status(500).json({
             success: false,
             message: "Server error during registration"
@@ -69,6 +82,7 @@ export const loginUser = async (req, res) => {
         const password = typeof req.body.password === 'string' ? req.body.password.trim() : '';
 
         if (!email || !password) {
+            recordLoginAttempt(req, 'failure', 400);
             return res.status(400).json({
                 success: false,
                 message: "Email and password are required"
@@ -78,6 +92,7 @@ export const loginUser = async (req, res) => {
         // Find user by email
         const user = await User.findOne({ email });
         if (!user) {
+            recordLoginAttempt(req, 'failure', 400);
             return res.status(400).json({
                 success: false,
                 message: "Invalid email or password"
@@ -87,6 +102,7 @@ export const loginUser = async (req, res) => {
         // Check password
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
+            recordLoginAttempt(req, 'failure', 400);
             return res.status(400).json({
                 success: false,
                 message: "Invalid email or password"
@@ -111,8 +127,11 @@ export const loginUser = async (req, res) => {
                 role: user.role
             }
         });
+
+        recordLoginAttempt(req, 'success', 200);
     } catch (error) {
         console.error("Login error:", error);
+        recordLoginAttempt(req, 'failure', 500);
         res.status(500).json({
             success: false,
             message: "Server error during login"
@@ -146,6 +165,7 @@ export const submitBlogPost = async (req, res) => {
         console.log("User:", req.user?.name);
 
         if (!title || !description || !category) {
+            recordBlogSubmission(req, 'failure', 400);
             return res.status(400).json({
                 success: false,
                 message: "Title, description, and category are required"
@@ -166,6 +186,14 @@ export const submitBlogPost = async (req, res) => {
 
         await blog.save();
 
+        // The submission enters the moderation queue here, so we increment the pending depth immediately.
+        recordBlogSubmission(req, 'pending', 201);
+        incrementModerationQueueDepth('blog', 1);
+
+        if (image) {
+            recordImageUpload(req, image.size, 'success', 201);
+        }
+
         res.status(201).json({
             success: true,
             message: "Blog post submitted for approval! Our team will review it soon.",
@@ -173,6 +201,7 @@ export const submitBlogPost = async (req, res) => {
         });
     } catch (error) {
         console.error("Submit blog error:", error);
+        recordBlogSubmission(req, 'failure', 500);
         res.status(500).json({
             success: false,
             message: "Server error during blog submission: " + error.message

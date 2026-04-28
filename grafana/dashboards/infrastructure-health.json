@@ -1,0 +1,102 @@
+{
+  "uid": "quickblog-infrastructure-health",
+  "title": "QuickBlog Infrastructure Health",
+  "description": "Node.js memory, CPU, event loop lag, MongoDB connections, and database timing.",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "tags": ["quickblog", "infrastructure", "nodejs"],
+  "time": { "from": "now-6h", "to": "now" },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Node.js Runtime",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Memory Usage",
+      "description": "Heap and RSS memory usage for the backend process.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "quickblog_node_process_memory_heap_used_bytes",
+          "legendFormat": "heap used",
+          "refId": "A"
+        },
+        {
+          "expr": "quickblog_node_process_memory_heap_total_bytes",
+          "legendFormat": "heap total",
+          "refId": "B"
+        },
+        {
+          "expr": "quickblog_node_process_memory_rss_bytes",
+          "legendFormat": "rss",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "CPU and Event Loop Lag",
+      "description": "CPU saturation and event loop pressure for the Node.js runtime.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "quickblog_node_process_cpu_usage_percent",
+          "legendFormat": "cpu %",
+          "refId": "A"
+        },
+        {
+          "expr": "quickblog_node_event_loop_lag_ms",
+          "legendFormat": "event loop lag ms",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "MongoDB and Query Timing",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Active MongoDB Connections",
+      "description": "Connected Mongoose clients the app currently sees as active.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "quickblog_mongodb_active_connections",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Database Operation Latency",
+      "description": "P95 MongoDB operation latency for request-driven queries.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 10 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(quickblog_db_operation_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "db p95",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

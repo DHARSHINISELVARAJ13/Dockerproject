@@ -22,9 +22,10 @@ pipeline {
                 docker run -d --name quickblog-backend \
                 -p 3000:3000 \
                 -e PORT=3000 \
-                -e MONGO_URI="mongodb+srv://dharshinisugandhi:dhars1309@cluster0.0e69m2i.mongodb.net/?appName=Cluster0" \
+                -e MONGO_URI="$MONGO_URI" \
                 -e NODE_ENV=development \
-                -e JWT_SECRET=your-secret-key \
+                -e JWT_SECRET="$JWT_SECRET" \
+                -e OPENAI_API_KEY="$OPENAI_API_KEY" \
                 quickblog-backend
                 '''
             }

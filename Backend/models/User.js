@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { mongooseMetricsPlugin } from "../configs/metrics.js";
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -27,6 +28,9 @@ const userSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+// Capture MongoDB operation latency for auth flows without changing the controller code path.
+userSchema.plugin(mongooseMetricsPlugin);
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

@@ -3,6 +3,13 @@ import imagekit from "../configs/imageKit.js";
 import Blog from "../models/Blog.js";
 import Comment from "../models/Comment.js"; // ✅ Added missing import
 import main from "../configs/gemini.js";
+import {
+  incrementModerationQueueDepth,
+  recordAiGeneration,
+  recordBlogSubmission,
+  recordCommentSubmission,
+  recordImageUpload,
+} from "../configs/metrics.js";
 
 // ➤ Add a new blog (Admin only - direct publish)
 export const addBlog = async (req, res) => {
@@ -46,6 +53,10 @@ export const addBlog = async (req, res) => {
       image = `/uploads/${imageFile.filename}`;
     }
 
+    if (imageFile) {
+      recordImageUpload(req, imageFile.size, 'success', 201);
+    }
+
     await Blog.create({ 
       title, 
       subTitle, 
@@ -58,6 +69,9 @@ export const addBlog = async (req, res) => {
       authorName: req.user.name,
       approvedBy: req.user._id
     });
+
+    // Admin direct publishing is still a blog creation event, so we count it separately from the pending queue.
+    recordBlogSubmission(req, 'approved', 201);
 
     res.json({ success: true, message: "Blog published successfully" });
   } catch (error) {
@@ -136,6 +150,7 @@ export const addComment = async (req, res) => {
     // Check if blog exists and is published
     const existingBlog = await Blog.findOne({ _id: blog, isPublished: true });
     if (!existingBlog) {
+      recordCommentSubmission(req, 'failure', 404);
       return res.status(404).json({ success: false, message: "Blog not found" });
     }
 
@@ -146,6 +161,10 @@ export const addComment = async (req, res) => {
       content,
       isApproved: false
     });
+
+    // Comments enter moderation as soon as they are submitted, so the pending queue stays visible.
+    recordCommentSubmission(req, 'pending', 200);
+    incrementModerationQueueDepth('comment', 1);
     
     res.json({ success: true, message: "Comment submitted for approval" });
   } catch (error) {
@@ -166,9 +185,12 @@ export const getBlogComments = async (req, res) => {
   }
 };
 export const generateContent = async (req, res) => {
+  const startedAt = process.hrtime.bigint();
+
   try {
     const { prompt } = req.body;
     if (!prompt) {
+      recordAiGeneration(req, 'failure', Number(process.hrtime.bigint() - startedAt) / 1e6, 200);
       return res.json({ success: false, message: "Prompt is required" });
     }
 
@@ -176,8 +198,11 @@ export const generateContent = async (req, res) => {
       prompt + " Generate a blog content for this topic in simple text format"
     );
 
+    recordAiGeneration(req, 'success', Number(process.hrtime.bigint() - startedAt) / 1e6, 200);
+
     res.json({ success: true, content });
   } catch (error) {
+    recordAiGeneration(req, 'failure', Number(process.hrtime.bigint() - startedAt) / 1e6, 200);
     res.json({ success: false, message: error.message });
   }
 };

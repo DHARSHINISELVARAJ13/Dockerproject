@@ -1,0 +1,65 @@
+groups:
+  - name: quickblog-platform-alerts
+    rules:
+      - alert: QuickBlogHighErrorRate
+        expr: |
+          sum(rate(quickblog_http_requests_total{status_code=~"5.."}[5m]))
+            /
+          sum(rate(quickblog_http_requests_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+          urgency: critical
+        annotations:
+          summary: "QuickBlog error rate is above 5%"
+          description: "The backend is returning too many 5xx responses, which usually means a route regression or an upstream dependency issue."
+
+      - alert: QuickBlogHeapUsageHigh
+        expr: quickblog_node_process_memory_heap_used_bytes / quickblog_node_process_memory_heap_total_bytes > 0.85
+        for: 10m
+        labels:
+          severity: critical
+          urgency: critical
+        annotations:
+          summary: "Node.js heap usage is above 85%"
+          description: "Heap pressure is sustained and may lead to GC pauses or process instability."
+
+      - alert: QuickBlogModerationBacklogGrowing
+        expr: sum(quickblog_moderation_queue_depth{outcome="pending"}) > 50
+        for: 10m
+        labels:
+          severity: warning
+          urgency: operational
+        annotations:
+          summary: "Moderation queue backlog is growing"
+          description: "Pending blog or comment reviews have accumulated beyond the operational threshold."
+
+      - alert: QuickBlogAIGenerationSlow
+        expr: histogram_quantile(0.99, sum(rate(quickblog_ai_generation_duration_ms_bucket[5m])) by (le)) > 15000
+        for: 10m
+        labels:
+          severity: warning
+          urgency: operational
+        annotations:
+          summary: "AI generation p99 latency is too high"
+          description: "The synchronous AI generation path is slowing down and may be hurting the user experience."
+
+      - alert: QuickBlogEventLoopLagHigh
+        expr: quickblog_node_event_loop_lag_ms > 100
+        for: 5m
+        labels:
+          severity: critical
+          urgency: critical
+        annotations:
+          summary: "Node.js event loop lag is high"
+          description: "The backend event loop is stalling, which usually increases latency for every request."
+
+      - alert: QuickBlogMongoConnectionsDown
+        expr: quickblog_mongodb_active_connections < 1
+        for: 5m
+        labels:
+          severity: critical
+          urgency: critical
+        annotations:
+          summary: "Backend is not connected to MongoDB"
+          description: "The application appears to have lost its active MongoDB connection."
