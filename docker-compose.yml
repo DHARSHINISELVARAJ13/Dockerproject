@@ -1,79 +1,55 @@
-
+version: '3.8'
 
 services:
+  frontend:
+    build:
+      context: ./client
+    container_name: quickblog-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - quickblog-network
+
   backend:
     build:
       context: ./Backend
-      dockerfile: Dockerfile
     container_name: quickblog-backend
-    expose:
-      - "3000"
+    ports:
+      - "3002:3000"
     environment:
       PORT: 3000
-      # Keep the production MongoDB target external so this observability stack only owns the app, not the database.
-      MONGO_URI: ${MONGO_URI:?Set MONGO_URI before starting the stack}
+      MONGO_URI: mongodb://root:password@mongodb:27017/quickblog?authSource=admin
+      JWT_SECRET: secret123
       NODE_ENV: production
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before starting the stack}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      IMAGEKIT_PUBLIC_KEY: ${IMAGEKIT_PUBLIC_KEY:-}
-      IMAGEKIT_PRIVATE_KEY: ${IMAGEKIT_PRIVATE_KEY:-}
-      IMAGEKIT_URL_ENDPOINT: ${IMAGEKIT_URL_ENDPOINT:-}
-    volumes:
-      - backend_uploads:/app/uploads
-    networks:
-      - quickblog-network
-
-  prometheus:
-    image: prom/prometheus:v2.54.1
-    container_name: quickblog-prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
-      - prometheus_data:/prometheus
     depends_on:
-      - backend
-      - alertmanager
+      - mongodb
     networks:
       - quickblog-network
 
-  alertmanager:
-    image: prom/alertmanager:v0.27.0
-    container_name: quickblog-alertmanager
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --storage.path=/alertmanager
-      - --config.expand-env
+  mongodb:
+    image: mongo:6
+    container_name: quickblog-mongodb
     environment:
-      ALERTMANAGER_CRITICAL_SLACK_WEBHOOK: ${ALERTMANAGER_CRITICAL_SLACK_WEBHOOK:?Set ALERTMANAGER_CRITICAL_SLACK_WEBHOOK before starting the stack}
-      ALERTMANAGER_OPS_SLACK_WEBHOOK: ${ALERTMANAGER_OPS_SLACK_WEBHOOK:?Set ALERTMANAGER_OPS_SLACK_WEBHOOK before starting the stack}
-    expose:
-      - "9093"
-    volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
-    networks:
-      - quickblog-network
-
-  grafana:
-    image: grafana/grafana:11.2.0
-    container_name: quickblog-grafana
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
     ports:
-      - "3001:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER before starting the stack}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD before starting the stack}
-      GF_USERS_ALLOW_SIGN_UP: "false"
+      - "27017:27017"
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-    depends_on:
-      - prometheus
+      - mongodb_data:/data/db
+    networks:
+      - quickblog-network
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: quickblog-jenkins
+    user: root
+    ports:
+      - "8085:8080"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - quickblog-network
 
@@ -82,7 +58,5 @@ networks:
     driver: bridge
 
 volumes:
-  backend_uploads:
-  prometheus_data:
-  alertmanager_data:
-  grafana_data:
+  mongodb_data:
+  jenkins_data:
