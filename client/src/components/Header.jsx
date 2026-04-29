@@ -12,7 +12,7 @@ const Header = () => {
   };
   const onClear = () => {
     setInput('')
-    inputRef.current.value = ''
+     inputRef.current.value = ''
   }
   return (
     <div className="mx-8 sm:mx-16 xl:mx-24 relative">
@@ -24,7 +24,7 @@ const Header = () => {
         </div>
 
         <h1 className="text-3xl sm:text-6xl font-semibold sm:leading-16 text-gray-700">
-          Your own <span className="text-primary">Blogging </span>
+          Your own <span className="text-primary">blogging </span>
           <br />
           Platform.
         </h1>
