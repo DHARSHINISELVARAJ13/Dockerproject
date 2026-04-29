@@ -10,10 +10,10 @@ const Header = () => {
     e.preventDefault();
     setInput(inputRef.current.value); // fixed typo
   };
-    const onClear =()=>{
-      setInput('')
-      inputRef.current.value=''
-    }
+  const onClear = () => {
+    setInput('')
+    inputRef.current.value = ''
+  }
   return (
     <div className="mx-8 sm:mx-16 xl:mx-24 relative">
       <div className="text-center mt-20 mb-8">
@@ -24,13 +24,13 @@ const Header = () => {
         </div>
 
         <h1 className="text-3xl sm:text-6xl font-semibold sm:leading-16 text-gray-700">
-          Your own <span className="text-primary">Blogging </span>
+          Your own <span className="text-primary">blogging </span>
           <br />
           Platform.
         </h1>
 
         <p className="my-6 sm:my-8 max-w-2xl m-auto max-sm:text-xs text-gray-500">
-          This is your space to think out loud, to share what matters, and to write without filters. 
+          This is your space to think out loud, to share what matters, and to write without filters.
           Whether it's one word or a thousand, your story starts right here.
         </p>
 
@@ -53,11 +53,11 @@ const Header = () => {
           </button>
         </form>
       </div>
-        <div className='text-center mt-4'>
-  <button onClick={onClear} className='border font-light text-xs py-1 px-3 rounded-sm shadow-custom-sm cursor-pointer'>
-    Clear Search
-  </button>
-</div>
+      <div className='text-center mt-4'>
+        <button onClick={onClear} className='border font-light text-xs py-1 px-3 rounded-sm shadow-custom-sm cursor-pointer'>
+          Clear Search
+        </button>
+      </div>
 
       <img
         src={assets.gradientBackground}
